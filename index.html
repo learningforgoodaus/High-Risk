@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High Risk Domestic Violence Indicators</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Define Brand Colours */
+        :root {
+            --light-purple: #C6B4D9; /* Front Text Border/Accent */
+            --dark-purple-text: #413659; /* Front/Back Text, NEW Back Background */
+            --back-text: #F2F2F2; /* Back Text (Off-White) */
+            --off-white: #F2F2F2; /* Front Background, Body Background */
+            --accent-purple: #513873; /* Accent colour for main question */
+            --danger-red: #D9534F; /* Added for visual danger cues */
+            --warning-orange: #F0AD4E; /* Added for visual warning cues */
+        }
+
+        /* Set a modern font */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--off-white);
+            padding: 20px;
+        }
+
+        /* Container for the 3D flip effect */
+        .flip-card {
+            background-color: transparent;
+            width: 100%;
+            max-width: 320px;
+            height: 280px;
+            perspective: 1000px; 
+            margin: 20px auto; 
+            border-radius: 12px;
+            cursor: pointer;
+        }
+        
+        /* Layout container for horizontal row on desktop (lg breakpoint) */
+        .card-container {
+            display: flex;
+            flex-direction: column; /* Stacked on mobile */
+            justify-content: center;
+            align-items: center;
+            gap: 24px; 
+            margin-top: 30px;
+        }
+        
+        @media (min-width: 1024px) {
+            .card-container {
+                flex-direction: row; /* Horizontal on desktop */
+                align-items: stretch; /* Make cards the same height */
+            }
+        }
+
+        /* The container for both front and back sides */
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.8s;
+            transform-style: preserve-3d;
+            border-radius: 12px;
+        }
+
+        /* Flip when hovering (desktop) or when clicked (mobile/accessibility) */
+        .flip-card:focus .flip-card-inner,
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+
+        /* Position and style both front and back sides */
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+            line-height: 1.4;
+        }
+
+        /* Style the front side (Question) - WHITE CONTAINER WITH DARK BORDER */
+        .flip-card-front {
+            background-color: var(--off-white); 
+            color: var(--dark-purple-text); 
+            font-size: 1.1em;
+            font-weight: 400; /* Normal text weight */
+            border: 2px solid var(--accent-purple); /* Added dark border */
+        }
+        
+        .flip-card-front .question-tag {
+            font-size: 1.4em;
+            color: var(--accent-purple); 
+            margin-bottom: 8px;
+            display: block;
+            font-weight: 600; /* Keep the question tag bold */
+        }
+
+        /* Style the back side (Answer) */
+        .flip-card-back {
+            background-color: var(--dark-purple-text); 
+            color: var(--back-text); 
+            transform: rotateY(180deg);
+            text-align: left;
+            font-size: 0.95em;
+            font-weight: 400; /* Normal text weight */
+        }
+        
+        /* High Risk Answer Styling */
+        .high-risk-answer {
+            color: var(--danger-red);
+            font-weight: bold;
+        }
+
+        /* Not High Risk Answer Styling */
+        .not-high-risk-answer {
+            color: var(--warning-orange);
+            font-weight: bold;
+        }
+
+        .flip-card-back strong.answer-head {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+            color: var(--light-purple); 
+            text-align: center;
+            padding-bottom: 5px;
+            border-bottom: 2px solid var(--light-purple);
+        }
+    </style>
+    <script>
+        function toggleFlip(card) {
+            card.classList.toggle('flipped');
+        }
+    </script>
+</head>
+<body class="p-4 sm:p-8">
+
+    <div class="max-w-6xl mx-auto text-center">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Immediate Danger Signs (High Risk)</h1>
+        <p class="text-lg text-gray-600 mb-8 p-4 bg-gray-100 rounded-lg">
+            Read the situation and decide: <strong>HIGH RISK or NOT?</strong> Select the card to check your answer and learn why.
+        </p>
+    </div>
+
+    <!-- MAIN CONTAINER FOR HORIZONTAL LAYOUT ON DESKTOP -->
+    <div class="card-container max-w-6xl mx-auto">
+        
+        <!-- Card 1: HIGH RISK - Threats to Kill (Instance: Verbal Threat) -->
+        <div class="flip-card" tabindex="0" onclick="toggleFlip(this)">
+            <div class="flip-card-inner">
+                <div class="flip-card-front">
+                    <span class="question-tag">HIGH RISK or NOT?</span>
+                    <br>
+                    A patron on the phone says, "If you leave, you will pay. I will kill you before I let you take the kids."
+                </div>
+                <div class="flip-card-back">
+                    <strong class="answer-head high-risk-answer">YES, IT IS HIGH RISK.</strong>
+                    <p><strong>Why?</strong> Any <strong>threat to kill</strong> is a life-threatening risk. It indicates an <strong>immediate emergency</strong> and a strong intent to harm.</p>
+                    <p><strong>Action:</strong> Your job is to immediately follow club policy and <strong>call the police (000)</strong> or security to ensure the victim-survivor's safety.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Card 2: HIGH RISK - Strangulation/Choking (Instance: Physical Action) -->
+        <div class="flip-card" tabindex="0" onclick="toggleFlip(this)">
+            <div class="flip-card-inner">
+                <div class="flip-card-front">
+                    <span class="question-tag">HIGH RISK or NOT?</span>
+                    <br>
+                    A staff member quietly tells their manager: "My partner put their hands around my neck and squeezed until I couldn't breathe."
+                </div>
+                <div class="flip-card-back">
+                    <strong class="answer-head high-risk-answer">YES, IT IS HIGH RISK.</strong>
+                    <p><strong>Why?</strong> <strong>Strangulation (choking)</strong> is a critical danger sign. It is one of the highest risk factors for a person being killed in the future, even if there are no visible injuries.</p>
+                    <p><strong>Action:</strong> You must immediately <strong>connect the staff member with specialist services</strong> (like 1800RESPECT) and secure their safety at work. Immediate referral is needed.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 3: NOT HIGH RISK (BUT STILL ABUSE) - Financial Control (Instance: Economic Abuse) -->
+        <div class="flip-card" tabindex="0" onclick="toggleFlip(this)">
+            <div class="flip-card-inner">
+                <div class="flip-card-front">
+                    <span class="question-tag">HIGH RISK or NOT?</span>
+                    <br>
+                    A staff member says: "My partner makes me give him all my payslips and I have to ask him for money just to buy lunch."
+                </div>
+                <div class="flip-card-back">
+                    <strong class="answer-head not-high-risk-answer">NO, BUT IT IS STILL ABUSE.</strong>
+                    <p><strong>Why?</strong> This is <strong>Economic Abuse</strong>. It is controlling and harmful but does <strong>not</strong> have the critical fatality factors (threats to kill, strangulation) that require a 000 emergency response.</p>
+                    <p><strong>Action:</strong> This person needs <strong>immediate help</strong> and a <strong>specialist referral</strong> (e.g., EAP, 1800RESPECT). Always offer workplace support (like DV leave).</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>
