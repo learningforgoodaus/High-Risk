@@ -3,207 +3,342 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>High Risk Domestic Violence Indicators</title>
+    <title>High Risk DV Indicators - Drag & Drop</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Define Brand Colours */
         :root {
-            --light-purple: #C6B4D9; /* Front Text Border/Accent */
-            --dark-purple-text: #413659; /* Front/Back Text, NEW Back Background */
-            --back-text: #F2F2F2; /* Back Text (Off-White) */
-            --off-white: #F2F2F2; /* Front Background, Body Background */
-            --accent-purple: #513873; /* Accent colour for main question */
-            --danger-red: #D9534F; /* Added for visual danger cues */
-            --warning-orange: #F0AD4E; /* Added for visual warning cues */
+            /* --- BRAND PALETTE --- */
+            --brand-deep-purple: #513873;  /* High Risk / Primary Accent */
+            --brand-mauve: #9C7F9D;        /* Abuse / Secondary Accent */
+            --brand-light-purple: #C6B4D9; /* Borders / Highlights */
+            --brand-dark-text: #413659;    /* Main Text */
+            --brand-off-white: #F2F2F2;    /* Card Backgrounds */
+            --brand-bg: #F6F5F8;           /* Main Background */
+            
+            /* --- UI FEEDBACK --- */
+            --ui-success: #5CB85C;         /* Correct Match */
+            --ui-error-shake: #513873;     /* Error Movement */
         }
 
-        /* Set a modern font */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: var(--off-white);
-            padding: 20px;
+            background-color: var(--brand-bg);
+            color: var(--brand-dark-text);
+            overscroll-behavior: none;
         }
 
-        /* Container for the 3D flip effect */
-        .flip-card {
-            background-color: transparent;
-            width: 100%;
-            max-width: 320px;
-            height: 280px;
-            perspective: 1000px; 
-            margin: 20px auto; 
-            border-radius: 12px;
-            cursor: pointer;
+        /* Prevent text selection while dragging */
+        .no-select {
+            user-select: none;
+            -webkit-user-select: none;
         }
-        
-        /* Layout container for horizontal row on desktop (lg breakpoint) */
-        .card-container {
+
+        .main-title {
+            color: var(--brand-deep-purple);
+        }
+
+        /* Drop Zones */
+        .zone-container {
             display: flex;
-            flex-direction: column; /* Stacked on mobile */
-            justify-content: center;
-            align-items: center;
-            gap: 24px; 
-            margin-top: 30px;
+            gap: 20px;
+            margin-top: 20px;
+            flex-direction: column;
         }
         
-        @media (min-width: 1024px) {
-            .card-container {
-                flex-direction: row; /* Horizontal on desktop */
-                align-items: stretch; /* Make cards the same height */
+        @media (min-width: 768px) {
+            .zone-container {
+                flex-direction: row;
+                align-items: stretch;
             }
         }
 
-        /* The container for both front and back sides */
-        .flip-card-inner {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            text-align: center;
-            transition: transform 0.8s;
-            transform-style: preserve-3d;
+        .drop-zone {
+            flex: 1;
+            min-height: 200px;
+            border: 3px dashed var(--brand-light-purple);
             border-radius: 12px;
-        }
-
-        /* Flip when hovering (desktop) or when clicked (mobile/accessibility) */
-        .flip-card:focus .flip-card-inner,
-        .flip-card.flipped .flip-card-inner {
-            transform: rotateY(180deg);
-        }
-
-        /* Position and style both front and back sides */
-        .flip-card-front, .flip-card-back {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            -webkit-backface-visibility: hidden;
-            backface-visibility: hidden;
-            border-radius: 12px;
-            padding: 20px;
-            box-sizing: border-box;
+            background-color: #ffffff;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-            line-height: 1.4;
+            padding: 20px;
+            transition: background-color 0.3s, border-color 0.3s;
+            position: relative;
         }
 
-        /* Style the front side (Question) - WHITE CONTAINER WITH DARK BORDER */
-        .flip-card-front {
-            background-color: var(--off-white); 
-            color: var(--dark-purple-text); 
-            font-size: 1.1em;
-            font-weight: 400; /* Normal text weight */
-            border: 2px solid var(--accent-purple); /* Added dark border */
+        /* High Risk Zone - Uses Deep Purple */
+        .drop-zone.high-risk-zone {
+            border-color: var(--brand-deep-purple);
+            background-color: rgba(81, 56, 115, 0.1); /* Slightly Darker Tint */
         }
         
-        .flip-card-front .question-tag {
-            font-size: 1.4em;
-            color: var(--accent-purple); 
-            margin-bottom: 8px;
-            display: block;
-            font-weight: 600; /* Keep the question tag bold */
+        /* Abuse Zone - Uses Mauve */
+        .drop-zone.not-high-risk-zone {
+            border-color: var(--brand-mauve);
+            background-color: rgba(156, 127, 157, 0.15); /* Darker Tint for visibility */
         }
 
-        /* Style the back side (Answer) */
-        .flip-card-back {
-            background-color: var(--dark-purple-text); 
-            color: var(--back-text); 
-            transform: rotateY(180deg);
-            text-align: left;
-            font-size: 0.95em;
-            font-weight: 400; /* Normal text weight */
-        }
-        
-        /* High Risk Answer Styling */
-        .high-risk-answer {
-            color: var(--danger-red);
-            font-weight: bold;
-        }
-
-        /* Not High Risk Answer Styling */
-        .not-high-risk-answer {
-            color: var(--warning-orange);
-            font-weight: bold;
-        }
-
-        .flip-card-back strong.answer-head {
-            display: block;
+        .drop-zone h3 {
+            font-weight: 700;
             margin-bottom: 10px;
-            font-size: 1.3em;
-            color: var(--light-purple); 
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .zone-label-high { color: var(--brand-deep-purple); }
+        .zone-label-low { color: var(--brand-deep-purple); } /* Changed to deep purple for better contrast */
+
+        /* Draggable Items */
+        .items-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            min-height: 120px;
+        }
+
+        .draggable-item {
+            background-color: white;
+            border: 2px solid var(--brand-light-purple); /* Soft border initially */
+            color: var(--brand-dark-text);
+            padding: 15px 20px;
+            border-radius: 8px;
+            cursor: grab;
+            box-shadow: 0 4px 6px rgba(65, 54, 89, 0.1); /* Tinted shadow */
+            font-weight: 600;
+            max-width: 280px;
             text-align: center;
-            padding-bottom: 5px;
-            border-bottom: 2px solid var(--light-purple);
+            touch-action: none;
+            z-index: 10;
+            position: relative;
+            transition: transform 0.1s, box-shadow 0.2s, border-color 0.2s;
         }
+
+        .draggable-item:active {
+            cursor: grabbing;
+            box-shadow: 0 10px 20px rgba(65, 54, 89, 0.2);
+            border-color: var(--brand-deep-purple);
+            transform: scale(1.05);
+            z-index: 100;
+        }
+
+        /* Success/Error States */
+        .correct-drop {
+            border-color: var(--ui-success) !important;
+            background-color: #f0fdf4 !important;
+            color: #166534;
+        }
+
+        .shake {
+            animation: shake 0.5s;
+            border-color: var(--ui-error-shake) !important;
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+            75% { transform: translateX(-10px); }
+            100% { transform: translateX(0); }
+        }
+
+        /* Explanation Text inside Zone */
+        .explanation {
+            font-size: 0.85em;
+            margin-top: 8px;
+            color: var(--brand-dark-text);
+            font-weight: normal;
+            opacity: 0.9;
+        }
+
+        .hidden { display: none; }
     </style>
-    <script>
-        function toggleFlip(card) {
-            card.classList.toggle('flipped');
-        }
-    </script>
 </head>
 <body class="p-4 sm:p-8">
 
-    <div class="max-w-6xl mx-auto text-center">
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">Immediate Danger Signs (High Risk)</h1>
-        <p class="text-lg text-gray-600 mb-8 p-4 bg-gray-100 rounded-lg">
-            Read the situation and decide: <strong>HIGH RISK or NOT?</strong> Select the card to check your answer and learn why.
+    <div class="max-w-4xl mx-auto text-center">
+        <h1 class="text-3xl font-bold main-title mb-2">Identify the Risk</h1>
+        <p class="text-gray-600 mb-6 bg-white p-4 rounded-lg inline-block border border-gray-200 shadow-sm max-w-2xl">
+            <strong>Instructions:</strong> Imagine you are a staff member. If you witnessed these actions or heard these statements, what level of risk would it be? Drag each card to the correct zone to decide your next steps.
         </p>
     </div>
 
-    <!-- MAIN CONTAINER FOR HORIZONTAL LAYOUT ON DESKTOP -->
-    <div class="card-container max-w-6xl mx-auto">
+    <!-- Draggable Items Area -->
+    <div class="items-container max-w-4xl mx-auto" id="itemsContainer">
         
-        <!-- Card 1: HIGH RISK - Threats to Kill (Instance: Verbal Threat) -->
-        <div class="flip-card" tabindex="0" onclick="toggleFlip(this)">
-            <div class="flip-card-inner">
-                <div class="flip-card-front">
-                    <span class="question-tag">HIGH RISK or NOT?</span>
-                    <br>
-                    A patron on the phone says, "If you leave, you will pay. I will kill you before I let you take the kids."
-                </div>
-                <div class="flip-card-back">
-                    <strong class="answer-head high-risk-answer">YES, IT IS HIGH RISK.</strong>
-                    <p><strong>Why?</strong> Any <strong>threat to kill</strong> is a life-threatening risk. It indicates an <strong>immediate emergency</strong> and a strong intent to harm.</p>
-                    <p><strong>Action:</strong> Your job is to immediately follow club policy and <strong>call the police (000)</strong> or security to ensure the victim-survivor's safety.</p>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Card 2: HIGH RISK - Strangulation/Choking (Instance: Physical Action) -->
-        <div class="flip-card" tabindex="0" onclick="toggleFlip(this)">
-            <div class="flip-card-inner">
-                <div class="flip-card-front">
-                    <span class="question-tag">HIGH RISK or NOT?</span>
-                    <br>
-                    A staff member quietly tells their manager: "My partner put their hands around my neck and squeezed until I couldn't breathe."
-                </div>
-                <div class="flip-card-back">
-                    <strong class="answer-head high-risk-answer">YES, IT IS HIGH RISK.</strong>
-                    <p><strong>Why?</strong> <strong>Strangulation (choking)</strong> is a critical danger sign. It is one of the highest risk factors for a person being killed in the future, even if there are no visible injuries.</p>
-                    <p><strong>Action:</strong> You must immediately <strong>connect the staff member with specialist services</strong> (like 1800RESPECT) and secure their safety at work. Immediate referral is needed.</p>
-                </div>
-            </div>
+        <!-- Item 1 -->
+        <div class="draggable-item" data-category="high" id="item1">
+            "I will kill you if you leave."
+            <div class="explanation hidden"><strong>Threats to Kill:</strong> Indicates lethal intent. Call 000.</div>
         </div>
 
-        <!-- Card 3: NOT HIGH RISK (BUT STILL ABUSE) - Financial Control (Instance: Economic Abuse) -->
-        <div class="flip-card" tabindex="0" onclick="toggleFlip(this)">
-            <div class="flip-card-inner">
-                <div class="flip-card-front">
-                    <span class="question-tag">HIGH RISK or NOT?</span>
-                    <br>
-                    A staff member says: "My partner makes me give him all my payslips and I have to ask him for money just to buy lunch."
-                </div>
-                <div class="flip-card-back">
-                    <strong class="answer-head not-high-risk-answer">NO, BUT IT IS STILL ABUSE.</strong>
-                    <p><strong>Why?</strong> This is <strong>Economic Abuse</strong>. It is controlling and harmful but does <strong>not</strong> have the critical fatality factors (threats to kill, strangulation) that require a 000 emergency response.</p>
-                    <p><strong>Action:</strong> This person needs <strong>immediate help</strong> and a <strong>specialist referral</strong> (e.g., EAP, 1800RESPECT). Always offer workplace support (like DV leave).</p>
-                </div>
-            </div>
+        <!-- Item 2 -->
+        <div class="draggable-item" data-category="high" id="item2">
+            "Their hands were around my neck and I couldn't breathe."
+            <div class="explanation hidden"><strong>Strangulation:</strong> High predictor of future homicide.</div>
+        </div>
+
+        <!-- Item 3 -->
+        <div class="draggable-item" data-category="low" id="item3">
+            "Controls my money. I have to ask for lunch money."
+            <div class="explanation hidden"><strong>Financial Abuse:</strong> Harmful, but not immediate physical danger.</div>
+        </div>
+
+        <!-- Item 4 -->
+        <div class="draggable-item" data-category="low" id="item4">
+            "Calls me names. Says I'm useless."
+            <div class="explanation hidden"><strong>Emotional Abuse:</strong> Harmful, but not immediate physical danger.</div>
         </div>
 
     </div>
 
+    <!-- Drop Zones -->
+    <div class="zone-container max-w-4xl mx-auto no-select">
+        
+        <!-- Zone: High Risk -->
+        <div class="drop-zone high-risk-zone" data-zone="high">
+            <h3 class="zone-label-high">High Risk<br><span class="text-sm font-normal opacity-75">(Immediate Danger)</span></h3>
+            <div class="zone-content w-full"></div>
+        </div>
+
+        <!-- Zone: Not High Risk -->
+        <div class="drop-zone not-high-risk-zone" data-zone="low">
+            <h3 class="zone-label-low">Abuse<br><span class="text-sm font-normal opacity-75">(Support Needed)</span></h3>
+            <div class="zone-content w-full"></div>
+        </div>
+
+    </div>
+
+    <!-- Completion Message -->
+    <div id="successMessage" class="hidden fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-full shadow-lg font-bold">
+        All Correct! Great Job.
+    </div>
+
+    <script>
+        const draggables = document.querySelectorAll('.draggable-item');
+        const zones = document.querySelectorAll('.drop-zone');
+        let activeItem = null;
+        let startX = 0;
+        let startY = 0;
+        let itemsCorrect = 0;
+        const totalItems = draggables.length;
+
+        draggables.forEach(item => {
+            item.addEventListener('pointerdown', startDrag);
+        });
+
+        function startDrag(e) {
+            e.preventDefault();
+            activeItem = this;
+            
+            activeItem.style.zIndex = 1000;
+            activeItem.style.position = 'fixed'; 
+            
+            const rect = activeItem.getBoundingClientRect();
+            
+            activeItem.style.left = rect.left + 'px';
+            activeItem.style.top = rect.top + 'px';
+            activeItem.style.width = rect.width + 'px'; 
+
+            startX = e.clientX;
+            startY = e.clientY;
+
+            window.addEventListener('pointermove', onDrag);
+            window.addEventListener('pointerup', endDrag);
+        }
+
+        function onDrag(e) {
+            if (!activeItem) return;
+            e.preventDefault();
+
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+
+            activeItem.style.transform = `translate(${dx}px, ${dy}px) rotate(3deg)`;
+        }
+
+        function endDrag(e) {
+            if (!activeItem) return;
+
+            const itemRect = activeItem.getBoundingClientRect();
+            const itemCenter = {
+                x: itemRect.left + itemRect.width / 2,
+                y: itemRect.top + itemRect.height / 2
+            };
+
+            let droppedInZone = false;
+
+            zones.forEach(zone => {
+                const zoneRect = zone.getBoundingClientRect();
+                
+                if (itemCenter.x >= zoneRect.left && 
+                    itemCenter.x <= zoneRect.right && 
+                    itemCenter.y >= zoneRect.top && 
+                    itemCenter.y <= zoneRect.bottom) {
+                    
+                    droppedInZone = true;
+                    checkAnswer(activeItem, zone);
+                }
+            });
+
+            if (!droppedInZone) {
+                resetItem(activeItem);
+            }
+
+            activeItem.style.zIndex = '';
+            activeItem = null;
+            window.removeEventListener('pointermove', onDrag);
+            window.removeEventListener('pointerup', endDrag);
+        }
+
+        function checkAnswer(item, zone) {
+            const itemCategory = item.getAttribute('data-category');
+            const zoneCategory = zone.getAttribute('data-zone');
+
+            if (itemCategory === zoneCategory) {
+                successDrop(item, zone);
+            } else {
+                failDrop(item);
+            }
+        }
+
+        function successDrop(item, zone) {
+            item.style.position = 'static';
+            item.style.transform = 'none';
+            item.style.width = '100%';
+            item.style.marginBottom = '10px';
+            
+            item.classList.add('correct-drop');
+            item.style.cursor = 'default';
+            
+            const explanation = item.querySelector('.explanation');
+            if(explanation) explanation.classList.remove('hidden');
+
+            item.removeEventListener('pointerdown', startDrag);
+            zone.querySelector('.zone-content').appendChild(item);
+
+            itemsCorrect++;
+            if(itemsCorrect === totalItems) {
+                document.getElementById('successMessage').classList.remove('hidden');
+            }
+        }
+
+        function failDrop(item) {
+            item.style.transform = 'translate(0, 0)';
+            item.classList.add('shake');
+            
+            setTimeout(() => {
+                resetItem(item);
+                item.classList.remove('shake');
+            }, 500);
+        }
+
+        function resetItem(item) {
+            item.style.position = 'static';
+            item.style.transform = 'none';
+            item.style.width = '';
+        }
+    </script>
 </body>
 </html>
