@@ -27,7 +27,6 @@
             overscroll-behavior: none;
         }
 
-        /* Prevent text selection while dragging */
         .no-select {
             user-select: none;
             -webkit-user-select: none;
@@ -37,7 +36,6 @@
             color: var(--brand-deep-purple);
         }
 
-        /* Drop Zones */
         .zone-container {
             display: flex;
             gap: 20px;
@@ -54,7 +52,7 @@
 
         .drop-zone {
             flex: 1;
-            min-height: 200px;
+            min-height: 400px;
             border: 3px dashed var(--brand-light-purple);
             border-radius: 12px;
             background-color: #ffffff;
@@ -66,68 +64,68 @@
             position: relative;
         }
 
-        /* High Risk Zone - Uses Deep Purple */
         .drop-zone.high-risk-zone {
             border-color: var(--brand-deep-purple);
-            background-color: rgba(81, 56, 115, 0.1); /* Slightly Darker Tint */
+            background-color: rgba(81, 56, 115, 0.05);
         }
         
-        /* Abuse Zone - Uses Mauve */
         .drop-zone.not-high-risk-zone {
             border-color: var(--brand-mauve);
-            background-color: rgba(156, 127, 157, 0.15); /* Darker Tint for visibility */
+            background-color: rgba(156, 127, 157, 0.05);
         }
 
         .drop-zone h3 {
             font-weight: 700;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             text-transform: uppercase;
             letter-spacing: 0.05em;
+            text-align: center;
         }
 
         .zone-label-high { color: var(--brand-deep-purple); }
-        .zone-label-low { color: var(--brand-deep-purple); } /* Changed to deep purple for better contrast */
+        .zone-label-low { color: var(--brand-deep-purple); } 
 
-        /* Draggable Items */
         .items-container {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 15px;
+            gap: 12px;
             margin-bottom: 30px;
             min-height: 120px;
         }
 
         .draggable-item {
             background-color: white;
-            border: 2px solid var(--brand-light-purple); /* Soft border initially */
+            border: 2px solid var(--brand-light-purple);
             color: var(--brand-dark-text);
-            padding: 15px 20px;
+            padding: 12px 16px;
             border-radius: 8px;
             cursor: grab;
-            box-shadow: 0 4px 6px rgba(65, 54, 89, 0.1); /* Tinted shadow */
+            box-shadow: 0 4px 6px rgba(65, 54, 89, 0.1);
             font-weight: 600;
-            max-width: 280px;
+            width: 100%;
+            max-width: 240px;
             text-align: center;
             touch-action: none;
             z-index: 10;
             position: relative;
             transition: transform 0.1s, box-shadow 0.2s, border-color 0.2s;
+            font-size: 0.95rem;
         }
 
-        .draggable-item:active {
+        .draggable-item.dragging {
             cursor: grabbing;
-            box-shadow: 0 10px 20px rgba(65, 54, 89, 0.2);
+            box-shadow: 0 15px 30px rgba(65, 54, 89, 0.3);
             border-color: var(--brand-deep-purple);
-            transform: scale(1.05);
-            z-index: 100;
+            z-index: 1000;
+            opacity: 0.95;
         }
 
-        /* Success/Error States */
         .correct-drop {
             border-color: var(--ui-success) !important;
             background-color: #f0fdf4 !important;
             color: #166534;
+            pointer-events: none !important;
         }
 
         .shake {
@@ -143,201 +141,187 @@
             100% { transform: translateX(0); }
         }
 
-        /* Explanation Text inside Zone */
         .explanation {
-            font-size: 0.85em;
-            margin-top: 8px;
+            font-size: 0.8em;
+            margin-top: 6px;
             color: var(--brand-dark-text);
             font-weight: normal;
             opacity: 0.9;
+            line-height: 1.2;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            padding-top: 4px;
         }
 
         .hidden { display: none; }
+
+        .progress-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--brand-deep-purple);
+            width: 0%;
+            transition: width 0.4s ease;
+        }
     </style>
 </head>
-<body class="p-4 sm:p-8">
+<body class="p-4 sm:p-8 no-select">
 
-    <div class="max-w-4xl mx-auto text-center">
+    <div class="max-w-5xl mx-auto text-center">
         <h1 class="text-3xl font-bold main-title mb-2">Identify the Risk</h1>
         <p class="text-gray-600 mb-6 bg-white p-4 rounded-lg inline-block border border-gray-200 shadow-sm max-w-2xl">
-            <strong>Instructions:</strong> Imagine you are a staff member. If you witnessed these actions or heard these statements, what level of risk would it be? Drag each card to the correct zone to decide your next steps.
+            <strong>Instructions:</strong> Drag each indicator to the correct zone. High Risk implies immediate physical danger, while Abuse/Control tactics require safety planning and support.
         </p>
+        
+        <div class="max-w-xs mx-auto mb-8">
+            <div class="flex justify-between text-xs font-bold mb-1 uppercase tracking-wider text-gray-500">
+                <span>Progress</span>
+                <span id="progressText">0 / 8</span>
+            </div>
+            <div class="progress-bar">
+                <div id="progressFill" class="progress-fill"></div>
+            </div>
+        </div>
     </div>
 
-    <!-- Draggable Items Area -->
-    <div class="items-container max-w-4xl mx-auto" id="itemsContainer">
+    <div class="items-container max-w-6xl mx-auto" id="itemsContainer">
         
-        <!-- Item 1 -->
-        <div class="draggable-item" data-category="high" id="item1">
-            "I will kill you if you leave."
-            <div class="explanation hidden"><strong>Threats to Kill:</strong> Indicates lethal intent. Call 000.</div>
-        </div>
+        <!-- High Risk Items (4) -->
+        <div class="draggable-item" data-category="high">"I will kill you if you leave."<div class="explanation hidden"><strong>Threats to Kill:</strong> Direct indicator of lethal intent.</div></div>
+        <div class="draggable-item" data-category="high">"Their hands were around my neck and I couldn't breathe."<div class="explanation hidden"><strong>Strangulation:</strong> One of the highest predictors of homicide.</div></div>
+        <div class="draggable-item" data-category="high">"He showed me the gun he bought 'for protection'."<div class="explanation hidden"><strong>Weapon Access:</strong> Significantly escalates risk of lethal harm.</div></div>
+        <div class="draggable-item" data-category="high">"I've started packing my bags to leave for good."<div class="explanation hidden"><strong>Pending Separation:</strong> Separation is the most dangerous timeframe for victims.</div></div>
 
-        <!-- Item 2 -->
-        <div class="draggable-item" data-category="high" id="item2">
-            "Their hands were around my neck and I couldn't breathe."
-            <div class="explanation hidden"><strong>Strangulation:</strong> High predictor of future homicide.</div>
-        </div>
-
-        <!-- Item 3 -->
-        <div class="draggable-item" data-category="low" id="item3">
-            "Controls my money. I have to ask for lunch money."
-            <div class="explanation hidden"><strong>Financial Abuse:</strong> Harmful, but not immediate physical danger.</div>
-        </div>
-
-        <!-- Item 4 -->
-        <div class="draggable-item" data-category="low" id="item4">
-            "Calls me names. Says I'm useless."
-            <div class="explanation hidden"><strong>Emotional Abuse:</strong> Harmful, but not immediate physical danger.</div>
-        </div>
+        <!-- Abuse/Control Items (4) -->
+        <div class="draggable-item" data-category="low">"Controls my money. I have to ask for lunch money."<div class="explanation hidden"><strong>Financial Abuse:</strong> Restricts independence and ability to leave.</div></div>
+        <div class="draggable-item" data-category="low">"Calls me names. Says I'm useless."<div class="explanation hidden"><strong>Emotional Abuse:</strong> Systematic degradation used to diminish self-worth.</div></div>
+        <div class="draggable-item" data-category="low">"Demands my passwords and checks my phone daily."<div class="explanation hidden"><strong>Digital Control:</strong> Monitoring communications to exert power.</div></div>
+        <div class="draggable-item" data-category="low">"They tell me I'm 'crazy' and imagining things."<div class="explanation hidden"><strong>Gaslighting:</strong> Psychological manipulation used to make victims doubt their reality.</div></div>
 
     </div>
 
-    <!-- Drop Zones -->
-    <div class="zone-container max-w-4xl mx-auto no-select">
-        
-        <!-- Zone: High Risk -->
+    <div class="zone-container max-w-6xl mx-auto">
         <div class="drop-zone high-risk-zone" data-zone="high">
-            <h3 class="zone-label-high">High Risk<br><span class="text-sm font-normal opacity-75">(Immediate Danger)</span></h3>
-            <div class="zone-content w-full"></div>
+            <h3 class="zone-label-high">High Risk Indicators<br><span class="text-xs font-normal opacity-75">(Immediate/Lethal Danger)</span></h3>
+            <div class="zone-content w-full flex flex-col items-center"></div>
         </div>
 
-        <!-- Zone: Not High Risk -->
         <div class="drop-zone not-high-risk-zone" data-zone="low">
-            <h3 class="zone-label-low">Abuse<br><span class="text-sm font-normal opacity-75">(Support Needed)</span></h3>
-            <div class="zone-content w-full"></div>
+            <h3 class="zone-label-low">Abuse & Control<br><span class="text-xs font-normal opacity-75">(Support & Intervention Needed)</span></h3>
+            <div class="zone-content w-full flex flex-col items-center"></div>
         </div>
-
     </div>
 
-    <!-- Completion Message -->
-    <div id="successMessage" class="hidden fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-full shadow-lg font-bold">
-        All Correct! Great Job.
+    <div id="successMessage" class="hidden fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-indigo-900 text-white px-8 py-4 rounded-xl shadow-2xl font-bold flex items-center gap-3 z-[2000]">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        Activity Complete: All 8 indicators identified correctly.
     </div>
 
     <script>
         const draggables = document.querySelectorAll('.draggable-item');
         const zones = document.querySelectorAll('.drop-zone');
+        const container = document.getElementById('itemsContainer');
+        
         let activeItem = null;
-        let startX = 0;
-        let startY = 0;
+        let offsetX = 0;
+        let offsetY = 0;
         let itemsCorrect = 0;
         const totalItems = draggables.length;
 
+        // Shuffle
+        for (let i = container.children.length; i >= 0; i--) {
+            container.appendChild(container.children[Math.random() * i | 0]);
+        }
+
         draggables.forEach(item => {
-            item.addEventListener('pointerdown', startDrag);
+            item.addEventListener('pointerdown', (e) => {
+                if (item.classList.contains('correct-drop')) return;
+                
+                activeItem = item;
+                const rect = activeItem.getBoundingClientRect();
+                offsetX = e.clientX - rect.left;
+                offsetY = e.clientY - rect.top;
+                
+                activeItem.setPointerCapture(e.pointerId);
+                
+                activeItem.style.width = rect.width + 'px';
+                activeItem.style.position = 'fixed';
+                activeItem.style.left = rect.left + 'px';
+                activeItem.style.top = rect.top + 'px';
+                activeItem.classList.add('dragging');
+                
+                activeItem.addEventListener('pointermove', onMove);
+                activeItem.addEventListener('pointerup', onEnd);
+            });
         });
 
-        function startDrag(e) {
-            e.preventDefault();
-            activeItem = this;
-            
-            activeItem.style.zIndex = 1000;
-            activeItem.style.position = 'fixed'; 
+        function onMove(e) {
+            if (!activeItem) return;
+            activeItem.style.left = (e.clientX - offsetX) + 'px';
+            activeItem.style.top = (e.clientY - offsetY) + 'px';
+            activeItem.style.transform = 'rotate(2deg)';
+        }
+
+        function onEnd(e) {
+            if (!activeItem) return;
             
             const rect = activeItem.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
             
-            activeItem.style.left = rect.left + 'px';
-            activeItem.style.top = rect.top + 'px';
-            activeItem.style.width = rect.width + 'px'; 
-
-            startX = e.clientX;
-            startY = e.clientY;
-
-            window.addEventListener('pointermove', onDrag);
-            window.addEventListener('pointerup', endDrag);
-        }
-
-        function onDrag(e) {
-            if (!activeItem) return;
-            e.preventDefault();
-
-            const dx = e.clientX - startX;
-            const dy = e.clientY - startY;
-
-            activeItem.style.transform = `translate(${dx}px, ${dy}px) rotate(3deg)`;
-        }
-
-        function endDrag(e) {
-            if (!activeItem) return;
-
-            const itemRect = activeItem.getBoundingClientRect();
-            const itemCenter = {
-                x: itemRect.left + itemRect.width / 2,
-                y: itemRect.top + itemRect.height / 2
-            };
-
-            let droppedInZone = false;
-
+            let targetZone = null;
             zones.forEach(zone => {
-                const zoneRect = zone.getBoundingClientRect();
-                
-                if (itemCenter.x >= zoneRect.left && 
-                    itemCenter.x <= zoneRect.right && 
-                    itemCenter.y >= zoneRect.top && 
-                    itemCenter.y <= zoneRect.bottom) {
-                    
-                    droppedInZone = true;
-                    checkAnswer(activeItem, zone);
+                const zRect = zone.getBoundingClientRect();
+                if (centerX > zRect.left && centerX < zRect.right && 
+                    centerY > zRect.top && centerY < zRect.bottom) {
+                    targetZone = zone;
                 }
             });
 
-            if (!droppedInZone) {
-                resetItem(activeItem);
-            }
-
-            activeItem.style.zIndex = '';
-            activeItem = null;
-            window.removeEventListener('pointermove', onDrag);
-            window.removeEventListener('pointerup', endDrag);
-        }
-
-        function checkAnswer(item, zone) {
-            const itemCategory = item.getAttribute('data-category');
-            const zoneCategory = zone.getAttribute('data-zone');
-
-            if (itemCategory === zoneCategory) {
-                successDrop(item, zone);
+            if (targetZone && activeItem.dataset.category === targetZone.dataset.zone) {
+                activeItem.classList.remove('dragging');
+                activeItem.classList.add('correct-drop');
+                activeItem.style.position = 'static';
+                activeItem.style.width = '100%';
+                activeItem.style.transform = 'none';
+                activeItem.style.margin = '0 0 12px 0';
+                
+                activeItem.querySelector('.explanation').classList.remove('hidden');
+                targetZone.querySelector('.zone-content').appendChild(activeItem);
+                
+                itemsCorrect++;
+                updateProgress();
             } else {
-                failDrop(item);
+                activeItem.classList.add('shake');
+                setTimeout(() => {
+                    activeItem.classList.remove('dragging', 'shake');
+                    activeItem.style.position = '';
+                    activeItem.style.left = '';
+                    activeItem.style.top = '';
+                    activeItem.style.width = '';
+                    activeItem.style.transform = '';
+                }, 400);
             }
+
+            activeItem.releasePointerCapture(e.pointerId);
+            activeItem.removeEventListener('pointermove', onMove);
+            activeItem.removeEventListener('pointerup', onEnd);
+            activeItem = null;
         }
 
-        function successDrop(item, zone) {
-            item.style.position = 'static';
-            item.style.transform = 'none';
-            item.style.width = '100%';
-            item.style.marginBottom = '10px';
-            
-            item.classList.add('correct-drop');
-            item.style.cursor = 'default';
-            
-            const explanation = item.querySelector('.explanation');
-            if(explanation) explanation.classList.remove('hidden');
-
-            item.removeEventListener('pointerdown', startDrag);
-            zone.querySelector('.zone-content').appendChild(item);
-
-            itemsCorrect++;
-            if(itemsCorrect === totalItems) {
+        function updateProgress() {
+            const percentage = (itemsCorrect / totalItems) * 100;
+            document.getElementById('progressText').innerText = `${itemsCorrect} / ${totalItems}`;
+            document.getElementById('progressFill').style.width = percentage + '%';
+            if (itemsCorrect === totalItems) {
                 document.getElementById('successMessage').classList.remove('hidden');
             }
-        }
-
-        function failDrop(item) {
-            item.style.transform = 'translate(0, 0)';
-            item.classList.add('shake');
-            
-            setTimeout(() => {
-                resetItem(item);
-                item.classList.remove('shake');
-            }, 500);
-        }
-
-        function resetItem(item) {
-            item.style.position = 'static';
-            item.style.transform = 'none';
-            item.style.width = '';
         }
     </script>
 </body>
