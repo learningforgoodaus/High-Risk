@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>High Risk DV Indicators - Mobile Friendly</title>
+    <title>High Risk DV Indicators - Feedback Enhanced</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
@@ -13,38 +13,39 @@
             --brand-dark-text: #413659;
             --brand-bg: #F6F5F8;
             --ui-success: #5CB85C;
+            --ui-error: #D9534F; /* Red for incorrect feedback */
         }
 
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--brand-bg);
             color: var(--brand-dark-text);
-            /* Prevent accidental refresh pull-down on mobile */
             overscroll-behavior: contain;
         }
 
-        /* Highlight item when tapped/selected for mobile */
+        /* The "Red Flash" state */
+        .incorrect-shake {
+            background-color: #fee2e2 !important; /* Light red bg */
+            border-color: var(--ui-error) !important;
+            color: #991b1b !important;
+            animation: shake 0.4s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
         .selected-item {
             border: 3px solid var(--brand-deep-purple) !important;
             box-shadow: 0 0 15px rgba(81, 56, 115, 0.4) !important;
-            transform: scale(1.05);
-        }
-
-        .drop-zone {
-            min-height: 150px;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        /* Pulse effect for mobile to show where to tap after selecting an item */
-        .zone-highlight {
-            background-color: rgba(81, 56, 115, 0.15) !important;
-            border-style: solid !important;
+            transform: scale(1.03);
         }
 
         .draggable-item {
-            touch-action: none; /* Critical for mobile */
-            transition: transform 0.2s, box-shadow 0.2s;
+            touch-action: none;
+            transition: all 0.2s ease;
             cursor: pointer;
             -webkit-tap-highlight-color: transparent;
         }
@@ -53,140 +54,104 @@
             background-color: #f0fdf4 !important;
             border-color: var(--ui-success) !important;
             pointer-events: none;
+            transform: scale(1) !important;
         }
 
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-8px); }
-            75% { transform: translateX(8px); }
+        .drop-zone {
+            min-height: 160px;
+            transition: background-color 0.3s;
         }
-        .shake { animation: shake 0.4s ease-in-out; }
-
-        .explanation { font-size: 0.85rem; line-height: 1.3; }
+        
+        .zone-highlight {
+            background-color: rgba(81, 56, 115, 0.08) !important;
+        }
     </style>
 </head>
 <body class="p-4 sm:p-6">
 
     <div class="max-w-4xl mx-auto">
-        <header class="text-center mb-6">
+        <header class="text-center mb-8">
             <h1 class="text-2xl font-bold text-[#513873] mb-2">Identify the Risk</h1>
-            <p class="text-sm text-gray-600 bg-white p-3 rounded shadow-sm border border-gray-100">
-                <strong>PC:</strong> Drag items to zones. <br>
-                <strong>Mobile:</strong> Tap an item, then tap the correct zone.
+            <p class="text-sm text-gray-600">
+                Tap an indicator, then select the matching zone.
             </p>
-            
-            <div class="mt-4 flex items-center justify-center gap-4">
-                <div class="w-48 bg-gray-200 rounded-full h-2.5">
-                    <div id="progressFill" class="bg-[#513873] h-2.5 rounded-full transition-all" style="width: 0%"></div>
-                </div>
-                <span id="progressText" class="text-xs font-bold">0 / 8</span>
-            </div>
         </header>
 
-        <div id="itemsContainer" class="flex flex-wrap justify-center gap-3 mb-8 min-h-[100px]">
-            </div>
+        <div id="itemsContainer" class="flex flex-wrap justify-center gap-3 mb-10"></div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="drop-zone border-2 border-dashed border-[#513873] rounded-xl p-4 bg-white/50" data-zone="high" onclick="handleZoneClick(this)">
-                <h3 class="text-[#513873] font-bold text-center mb-4 uppercase text-sm tracking-wide">High Risk Indicators</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="drop-zone border-2 border-dashed border-[#513873] rounded-xl p-5 bg-white/40" data-zone="high" onclick="handleZoneClick(this)">
+                <h3 class="text-[#513873] font-bold text-center mb-4 uppercase text-xs tracking-widest">High Risk Indicators</h3>
                 <div class="zone-content space-y-3"></div>
             </div>
 
-            <div class="drop-zone border-2 border-dashed border-[#9C7F9D] rounded-xl p-4 bg-white/50" data-zone="low" onclick="handleZoneClick(this)">
-                <h3 class="text-[#9C7F9D] font-bold text-center mb-4 uppercase text-sm tracking-wide">Abuse & Control</h3>
+            <div class="drop-zone border-2 border-dashed border-[#9C7F9D] rounded-xl p-5 bg-white/40" data-zone="low" onclick="handleZoneClick(this)">
+                <h3 class="text-[#9C7F9D] font-bold text-center mb-4 uppercase text-xs tracking-widest">Abuse & Control</h3>
                 <div class="zone-content space-y-3"></div>
             </div>
         </div>
     </div>
 
-    <div id="successMsg" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-full hidden shadow-lg z-50">
-        ✓ Activity Complete
-    </div>
-
     <script>
-        const data = [
+        const items = [
             { id: 1, cat: 'high', text: '"I will kill you if you leave."', desc: 'Direct indicator of lethal intent.' },
-            { id: 2, cat: 'high', text: '"Their hands were around my neck."', desc: 'Strangulation is a high homicide predictor.' },
-            { id: 3, cat: 'high', text: '"He showed me a gun."', desc: 'Weapon access significantly escalates risk.' },
+            { id: 2, cat: 'high', text: '"Their hands were around my neck."', desc: 'Strangulation is a key homicide predictor.' },
+            { id: 3, cat: 'high', text: '"He showed me a gun."', desc: 'Weapon access escalates lethal risk.' },
             { id: 4, cat: 'high', text: '"I\'m packing my bags to leave."', desc: 'Separation is the most dangerous timeframe.' },
-            { id: 5, cat: 'low', text: 'Controls my money.', desc: 'Restricts independence and ability to leave.' },
+            { id: 5, cat: 'low', text: 'Controls my money.', desc: 'Financial abuse restricts independence.' },
             { id: 6, cat: 'low', text: 'Calls me names.', desc: 'Emotional abuse diminishes self-worth.' },
-            { id: 7, cat: 'low', text: 'Demands my passwords.', desc: 'Digital control to exert power.' },
-            { id: 8, cat: 'low', text: 'Tells me I\'m "crazy".', desc: 'Gaslighting doubts reality.' }
+            { id: 7, cat: 'low', text: 'Demands my passwords.', desc: 'Digital monitoring used to exert power.' },
+            { id: 8, cat: 'low', text: 'Tells me I\'m "crazy".', desc: 'Gaslighting doubts the victim\'s reality.' }
         ];
 
         let selectedItem = null;
-        let score = 0;
 
         function init() {
             const container = document.getElementById('itemsContainer');
-            data.sort(() => Math.random() - 0.5).forEach(item => {
+            items.sort(() => Math.random() - 0.5).forEach(data => {
                 const div = document.createElement('div');
-                div.className = 'draggable-item bg-white border-2 border-[#C6B4D9] p-3 rounded-lg shadow-sm w-full max-w-[280px] text-sm font-semibold text-center';
-                div.innerText = item.text;
-                div.dataset.id = item.id;
-                div.dataset.category = item.cat;
+                div.className = 'draggable-item bg-white border-2 border-[#C6B4D9] p-4 rounded-lg shadow-sm w-full max-w-[260px] text-sm font-medium text-center';
+                div.innerText = data.text;
+                div.dataset.id = data.id;
+                div.dataset.category = data.cat;
                 
-                // Mouse Drag Events
-                div.draggable = true;
-                div.ondragstart = (e) => { e.dataTransfer.setData('text', item.id); };
-                
-                // Mobile Tap Event
                 div.onclick = (e) => {
                     e.stopPropagation();
-                    selectItem(div);
+                    if (div.classList.contains('correct-drop')) return;
+                    
+                    if(selectedItem) selectedItem.classList.remove('selected-item');
+                    selectedItem = div;
+                    div.classList.add('selected-item');
+                    document.querySelectorAll('.drop-zone').forEach(z => z.classList.add('zone-highlight'));
                 };
-
                 container.appendChild(div);
             });
-
-            // PC Drop Logic
-            document.querySelectorAll('.drop-zone').forEach(zone => {
-                zone.ondragover = (e) => e.preventDefault();
-                zone.ondrop = (e) => {
-                    const id = e.dataTransfer.getData('text');
-                    const el = document.querySelector(`[data-id="${id}"]`);
-                    validate(el, zone);
-                };
-            });
-        }
-
-        function selectItem(el) {
-            if(selectedItem) selectedItem.classList.remove('selected-item');
-            selectedItem = el;
-            el.classList.add('selected-item');
-            
-            // Highlight zones to show they are clickable
-            document.querySelectorAll('.drop-zone').forEach(z => z.classList.add('zone-highlight'));
         }
 
         function handleZoneClick(zone) {
             if (!selectedItem) return;
-            validate(selectedItem, zone);
-        }
 
-        function validate(item, zone) {
-            if (item.dataset.category === zone.dataset.zone) {
-                const info = data.find(d => d.id == item.dataset.id);
-                item.classList.remove('selected-item');
-                item.classList.add('correct-drop');
-                item.innerHTML = `<div>${info.text}</div><div class="explanation mt-2 pt-2 border-t border-green-200 font-normal text-green-800">${info.desc}</div>`;
-                zone.querySelector('.zone-content').appendChild(item);
-                score++;
-                updateProgress();
-                selectedItem = null;
-                document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('zone-highlight'));
+            if (selectedItem.dataset.category === zone.dataset.zone) {
+                // SUCCESS LOGIC
+                const info = items.find(i => i.id == selectedItem.dataset.id);
+                selectedItem.classList.remove('selected-item', 'incorrect-shake');
+                selectedItem.classList.add('correct-drop');
+                selectedItem.innerHTML = `<div class="font-bold">${info.text}</div><div class="mt-2 text-xs opacity-90 border-t border-green-200 pt-2 font-normal">${info.desc}</div>`;
+                zone.querySelector('.zone-content').appendChild(selectedItem);
+                resetSelection();
             } else {
-                item.classList.add('shake');
-                setTimeout(() => item.classList.remove('shake'), 400);
+                // ERROR LOGIC (Red Flash)
+                selectedItem.classList.add('incorrect-shake');
+                // Remove red flash after animation ends so they can try again
+                setTimeout(() => {
+                    if (selectedItem) selectedItem.classList.remove('incorrect-shake');
+                }, 450);
             }
         }
 
-        function updateProgress() {
-            const percent = (score / data.length) * 100;
-            document.getElementById('progressFill').style.width = percent + '%';
-            document.getElementById('progressText').innerText = `${score} / ${data.length}`;
-            if(score === data.length) document.getElementById('successMsg').classList.remove('hidden');
+        function resetSelection() {
+            selectedItem = null;
+            document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('zone-highlight'));
         }
 
         init();
