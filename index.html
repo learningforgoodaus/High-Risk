@@ -1,3 +1,6 @@
+I've updated the styles to tighten the mobile container, enlarged the instructional text, and darkened the swipe labels for better legibility. I also updated the subheading as requested.
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -31,27 +34,41 @@
         /* --- Mobile Swipe Specific --- */
         #mobileContainer {
             display: none;
-            height: 350px;
+            height: 350px; /* Ergonomic requirement */
             position: relative;
             perspective: 1000px;
             touch-action: none;
+            margin-bottom: 2rem;
         }
 
         .swipe-card {
             position: absolute;
-            width: 100%;
-            height: 100%;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 85%; /* Slightly smaller card */
+            height: 200px; /* Reduced height */
             display: flex;
             align-items: center;
             justify-content: center;
             text-align: center;
-            padding: 2rem;
+            padding: 1.5rem;
             background: white;
             border-radius: 1rem;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
             border: 2px solid var(--purple-light);
             user-select: none;
             transition: transform 0.1s ease-out;
+            font-weight: 600;
+            color: var(--purple-dark);
+        }
+
+        .swipe-label {
+            font-size: 0.85rem;
+            font-weight: 800; /* Bold/Darker text */
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #1a1a1a; /* Darker for accessibility */
         }
 
         @media (max-width: 767px) {
@@ -61,24 +78,16 @@
 
         /* --- Summary View --- */
         .summary-hidden { display: none !important; }
-        
-        .swipe-indicator {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            font-weight: bold;
-            text-transform: uppercase;
-            opacity: 0;
-            pointer-events: none;
-        }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
     <div id="gameContainer" class="max-w-5xl mx-auto">
-        <div class="text-center mb-6">
+        <div class="text-center mb-8">
             <h1 class="text-2xl font-bold text-[#3E3054] mb-2">Risk Indicator Sort</h1>
-            <p id="instruction" class="text-gray-600 text-sm italic">Drag to sort or swipe the card left/right.</p>
+            <p id="instruction" class="text-gray-800 text-sm md:text-base font-medium px-4">
+                Swipe left for a Control situation, or right for a High Risk situation
+            </p>
         </div>
 
         <div id="desktopView">
@@ -97,9 +106,9 @@
 
         <div id="mobileContainer">
             <div id="cardStack" class="relative w-full h-full"></div>
-            <div class="flex justify-between mt-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                <span>← Swipe Left for Control</span>
-                <span>Swipe Right for High Risk →</span>
+            <div class="flex justify-between items-center mt-6 px-2">
+                <span class="swipe-label">← Swipe Left <br><span class="text-[10px] font-normal">Control</span></span>
+                <span class="swipe-label text-right">Swipe Right → <br><span class="text-[10px] font-normal">High Risk</span></span>
             </div>
         </div>
     </div>
@@ -117,7 +126,7 @@
             </div>
         </div>
         <div class="text-center mt-10">
-            <button onclick="location.reload()" class="bg-[#3E3054] text-white px-6 py-2 rounded-full font-bold">Restart Activity</button>
+            <button onclick="location.reload()" class="bg-[#3E3054] text-white px-8 py-3 rounded-full font-bold shadow-lg active:scale-95 transition-transform">Restart Activity</button>
         </div>
     </div>
 
@@ -134,7 +143,6 @@
         ];
 
         let sortedData = { high: [], low: [] };
-        let currentMobileIndex = 0;
         const totalItems = cardData.length;
 
         function init() {
@@ -143,12 +151,11 @@
             renderMobile(shuffled);
         }
 
-        // --- DESKTOP LOGIC ---
         function renderDesktop(items) {
             const container = document.getElementById('itemsContainer');
             items.forEach(item => {
                 const el = document.createElement('div');
-                el.className = 'draggable-item bg-white border-2 border-gray-200 p-4 rounded-xl shadow-sm w-48 text-center text-sm font-medium';
+                el.className = 'draggable-item bg-white border-2 border-gray-200 p-4 rounded-xl shadow-sm w-48 text-center text-sm font-semibold';
                 el.innerText = item.text;
                 el.draggable = true;
                 el.dataset.id = item.id;
@@ -169,15 +176,17 @@
                 zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
                 zone.addEventListener('drop', (e) => {
                     zone.classList.remove('drag-over');
-                    const id = parseInt(e.dataTransfer.setData('text/plain', e.dataTransfer.getData('text/plain')));
-                    const item = cardData.find(c => c.id == e.dataTransfer.getData('text/plain'));
-                    handlePlacement(item, zone.dataset.zone);
-                    document.querySelector(`[data-id="${item.id}"]`).remove();
+                    const id = e.dataTransfer.getData('text/plain');
+                    const item = cardData.find(c => c.id == id);
+                    if(item) {
+                        handlePlacement(item, zone.dataset.zone);
+                        const el = document.querySelector(`[data-id="${id}"]`);
+                        if(el) el.remove();
+                    }
                 });
             });
         }
 
-        // --- MOBILE SWIPE LOGIC ---
         function renderMobile(items) {
             const stack = document.getElementById('cardStack');
             items.forEach((item, index) => {
@@ -191,23 +200,24 @@
 
                 card.addEventListener('touchstart', (e) => {
                     startX = e.touches[0].clientX;
-                });
+                }, {passive: true});
 
                 card.addEventListener('touchmove', (e) => {
                     currentX = e.touches[0].clientX - startX;
-                    const rotation = currentX / 10;
-                    card.style.transform = `translateX(${currentX}px) rotate(${rotation}deg)`;
-                });
+                    const rotation = currentX / 15;
+                    card.style.transform = `translate(-50%, -50%) translateX(${currentX}px) rotate(${rotation}deg)`;
+                }, {passive: true});
 
                 card.addEventListener('touchend', (e) => {
-                    if (Math.abs(currentX) > 120) {
+                    if (Math.abs(currentX) > 100) {
                         const direction = currentX > 0 ? 'high' : 'low';
-                        card.style.transform = `translateX(${currentX * 5}px) rotate(${currentX / 2}deg)`;
+                        card.style.transition = 'transform 0.3s ease-out, opacity 0.3s';
+                        card.style.transform = `translate(-50%, -50%) translateX(${currentX * 3}px) rotate(${currentX / 2}deg)`;
                         card.style.opacity = '0';
-                        setTimeout(() => card.remove(), 200);
+                        setTimeout(() => card.remove(), 300);
                         handlePlacement(item, direction);
                     } else {
-                        card.style.transform = 'translateX(0px) rotate(0deg)';
+                        card.style.transform = 'translate(-50%, -50%) translateX(0px) rotate(0deg)';
                     }
                     currentX = 0;
                 });
@@ -220,17 +230,16 @@
             sortedData[category].push(item.text);
             const currentTotal = sortedData.high.length + sortedData.low.length;
             
-            // Visual feedback for desktop drop
             if (window.innerWidth >= 768) {
                 const zone = document.querySelector(`[data-zone="${category}"] .zone-content`);
                 const feedback = document.createElement('div');
-                feedback.className = 'p-2 bg-gray-50 rounded border text-xs italic';
+                feedback.className = 'p-3 bg-gray-50 rounded-lg border border-gray-100 text-xs font-medium text-gray-700';
                 feedback.innerText = item.text;
                 zone.appendChild(feedback);
             }
 
             if (currentTotal === totalItems) {
-                setTimeout(showSummary, 500);
+                setTimeout(showSummary, 600);
             }
         }
 
@@ -241,8 +250,10 @@
 
             ['high', 'low'].forEach(cat => {
                 const list = document.getElementById(`list-${cat}`);
+                list.innerHTML = '';
                 sortedData[cat].forEach(text => {
                     const li = document.createElement('li');
+                    li.className = 'mb-1';
                     li.innerText = text;
                     list.appendChild(li);
                 });
@@ -253,3 +264,4 @@
     </script>
 </body>
 </html>
+```
