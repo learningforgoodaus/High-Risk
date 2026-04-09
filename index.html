@@ -10,6 +10,8 @@
             --purple-dark: #3E3054;
             --purple-light: #7D6B91;
             --bg-soft: #F6F5F8;
+            --correct-green: #dcfce7;
+            --error-red: #fee2e2;
         }
 
         body {
@@ -31,7 +33,7 @@
         /* --- Mobile Swipe Specific --- */
         #mobileContainer {
             display: none;
-            height: 350px; /* Ergonomic requirement */
+            height: 350px;
             position: relative;
             perspective: 1000px;
             touch-action: none;
@@ -43,8 +45,8 @@
             left: 50%;
             top: 50%;
             transform: translate(-50%, -50%);
-            width: 85%; /* Slightly smaller card */
-            height: 200px; /* Reduced height */
+            width: 85%;
+            height: 200px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -55,17 +57,17 @@
             box-shadow: 0 8px 20px rgba(0,0,0,0.1);
             border: 2px solid var(--purple-light);
             user-select: none;
-            transition: transform 0.1s ease-out;
+            transition: transform 0.1s ease-out, background-color 0.2s ease;
             font-weight: 600;
             color: var(--purple-dark);
         }
 
         .swipe-label {
             font-size: 0.85rem;
-            font-weight: 800; /* Bold/Darker text */
+            font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            color: #1a1a1a; /* Darker for accessibility */
+            color: #1a1a1a;
         }
 
         @media (max-width: 767px) {
@@ -73,7 +75,6 @@
             #mobileContainer { display: block; }
         }
 
-        /* --- Summary View --- */
         .summary-hidden { display: none !important; }
     </style>
 </head>
@@ -123,7 +124,7 @@
             </div>
         </div>
         <div class="text-center mt-10">
-            <button onclick="location.reload()" class="bg-[#3E3054] text-white px-8 py-3 rounded-full font-bold shadow-lg active:scale-95 transition-transform">Restart Activity</button>
+            <button onclick="location.reload()" class="bg-[#3E3054] text-white px-8 py-3 rounded-full font-bold shadow-lg">Restart Activity</button>
         </div>
     </div>
 
@@ -166,19 +167,18 @@
             });
 
             document.querySelectorAll('.drop-zone').forEach(zone => {
-                zone.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    zone.classList.add('drag-over');
-                });
-                zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+                zone.addEventListener('dragover', (e) => e.preventDefault());
                 zone.addEventListener('drop', (e) => {
-                    zone.classList.remove('drag-over');
                     const id = e.dataTransfer.getData('text/plain');
                     const item = cardData.find(c => c.id == id);
-                    if(item) {
+                    if(item && item.cat === zone.dataset.zone) {
                         handlePlacement(item, zone.dataset.zone);
+                        document.querySelector(`[data-id="${id}"]`).remove();
+                    } else {
+                        // Desktop vibration or snap back logic could go here
                         const el = document.querySelector(`[data-id="${id}"]`);
-                        if(el) el.remove();
+                        el.style.borderColor = 'red';
+                        setTimeout(() => el.style.borderColor = '', 500);
                     }
                 });
             });
@@ -197,24 +197,43 @@
 
                 card.addEventListener('touchstart', (e) => {
                     startX = e.touches[0].clientX;
+                    card.style.transition = 'none';
                 }, {passive: true});
 
                 card.addEventListener('touchmove', (e) => {
                     currentX = e.touches[0].clientX - startX;
                     const rotation = currentX / 15;
+                    
+                    // Determine if the current drag direction is correct
+                    const isDraggingRight = currentX > 0;
+                    const isCorrectDir = (isDraggingRight && item.cat === 'high') || (!isDraggingRight && item.cat === 'low');
+
+                    // Color feedback
+                    if (Math.abs(currentX) > 20) {
+                        card.style.backgroundColor = isCorrectDir ? 'var(--correct-green)' : 'var(--error-red)';
+                    } else {
+                        card.style.backgroundColor = 'white';
+                    }
+
                     card.style.transform = `translate(-50%, -50%) translateX(${currentX}px) rotate(${rotation}deg)`;
                 }, {passive: true});
 
                 card.addEventListener('touchend', (e) => {
-                    if (Math.abs(currentX) > 100) {
-                        const direction = currentX > 0 ? 'high' : 'low';
+                    const isDraggingRight = currentX > 0;
+                    const isCorrectDir = (isDraggingRight && item.cat === 'high') || (!isDraggingRight && item.cat === 'low');
+
+                    // Validation: Only allow swipe if direction is correct AND distance is met
+                    if (Math.abs(currentX) > 100 && isCorrectDir) {
                         card.style.transition = 'transform 0.3s ease-out, opacity 0.3s';
                         card.style.transform = `translate(-50%, -50%) translateX(${currentX * 3}px) rotate(${currentX / 2}deg)`;
                         card.style.opacity = '0';
                         setTimeout(() => card.remove(), 300);
-                        handlePlacement(item, direction);
+                        handlePlacement(item, isDraggingRight ? 'high' : 'low');
                     } else {
+                        // Reset if incorrect or not far enough
+                        card.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.3s';
                         card.style.transform = 'translate(-50%, -50%) translateX(0px) rotate(0deg)';
+                        card.style.backgroundColor = 'white';
                     }
                     currentX = 0;
                 });
