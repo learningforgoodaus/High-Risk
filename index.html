@@ -12,6 +12,8 @@
             --bg-soft: #F6F5F8;
             --correct-green: #dcfce7;
             --error-red: #fee2e2;
+            --border-correct: #22c55e;
+            --border-error: #ef4444;
         }
 
         body {
@@ -23,12 +25,29 @@
         /* --- Desktop Specific --- */
         .draggable-item {
             cursor: grab;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.3s;
             touch-action: none;
         }
         .dragging { opacity: 0.5; transform: scale(0.95); }
-        .drop-zone { min-height: 200px; transition: all 0.3s ease; }
-        .drag-over { background-color: rgba(62, 48, 84, 0.1) !important; border-style: solid !important; }
+        
+        .drop-zone { 
+            min-height: 200px; 
+            transition: all 0.3s ease; 
+            border-width: 2px;
+            border-style: dashed;
+        }
+
+        /* Active feedback for Desktop */
+        .drag-correct { 
+            background-color: var(--correct-green) !important; 
+            border-color: var(--border-correct) !important; 
+            border-style: solid !important;
+        }
+        .drag-wrong { 
+            background-color: var(--error-red) !important; 
+            border-color: var(--border-error) !important; 
+            border-style: solid !important;
+        }
 
         /* --- Mobile Swipe Specific --- */
         #mobileContainer {
@@ -91,11 +110,11 @@
         <div id="desktopView">
             <div id="itemsContainer" class="flex flex-wrap justify-center gap-3 mb-10 min-h-[100px]"></div>
             <div class="grid grid-cols-2 gap-6">
-                <div class="drop-zone border-2 border-dashed border-[#7D6B91] rounded-2xl p-6 bg-white" data-zone="low">
+                <div class="drop-zone border-[#7D6B91] rounded-2xl p-6 bg-white" data-zone="low">
                     <h3 class="text-[#7D6B91] font-bold text-center mb-4 uppercase">Abuse & Control</h3>
                     <div class="zone-content space-y-3"></div>
                 </div>
-                <div class="drop-zone border-2 border-dashed border-[#3E3054] rounded-2xl p-6 bg-white" data-zone="high">
+                <div class="drop-zone border-[#3E3054] rounded-2xl p-6 bg-white" data-zone="high">
                     <h3 class="text-[#3E3054] font-bold text-center mb-4 uppercase">High Risk</h3>
                     <div class="zone-content space-y-3"></div>
                 </div>
@@ -141,6 +160,7 @@
         ];
 
         let sortedData = { high: [], low: [] };
+        let draggedItemData = null; 
         const totalItems = cardData.length;
 
         function init() {
@@ -149,6 +169,7 @@
             renderMobile(shuffled);
         }
 
+        // --- DESKTOP LOGIC ---
         function renderDesktop(items) {
             const container = document.getElementById('itemsContainer');
             items.forEach(item => {
@@ -160,30 +181,58 @@
                 
                 el.addEventListener('dragstart', (e) => {
                     el.classList.add('dragging');
+                    draggedItemData = item;
                     e.dataTransfer.setData('text/plain', item.id);
                 });
-                el.addEventListener('dragend', () => el.classList.remove('dragging'));
+                el.addEventListener('dragend', () => {
+                    el.classList.remove('dragging');
+                    draggedItemData = null;
+                });
                 container.appendChild(el);
             });
 
             document.querySelectorAll('.drop-zone').forEach(zone => {
-                zone.addEventListener('dragover', (e) => e.preventDefault());
+                zone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    if (!draggedItemData) return;
+                    
+                    // Live color feedback based on correctness
+                    if (draggedItemData.cat === zone.dataset.zone) {
+                        zone.classList.add('drag-correct');
+                    } else {
+                        zone.classList.add('drag-wrong');
+                    }
+                });
+
+                zone.addEventListener('dragleave', () => {
+                    zone.classList.remove('drag-correct', 'drag-wrong');
+                });
+
                 zone.addEventListener('drop', (e) => {
+                    zone.classList.remove('drag-correct', 'drag-wrong');
                     const id = e.dataTransfer.getData('text/plain');
                     const item = cardData.find(c => c.id == id);
+                    
                     if(item && item.cat === zone.dataset.zone) {
                         handlePlacement(item, zone.dataset.zone);
                         document.querySelector(`[data-id="${id}"]`).remove();
                     } else {
-                        // Desktop vibration or snap back logic could go here
+                        // Reject drop: Flash red on item
                         const el = document.querySelector(`[data-id="${id}"]`);
-                        el.style.borderColor = 'red';
-                        setTimeout(() => el.style.borderColor = '', 500);
+                        if(el) {
+                            el.style.borderColor = 'var(--border-error)';
+                            el.style.backgroundColor = 'var(--error-red)';
+                            setTimeout(() => {
+                                el.style.borderColor = '';
+                                el.style.backgroundColor = '';
+                            }, 500);
+                        }
                     }
                 });
             });
         }
 
+        // --- MOBILE LOGIC ---
         function renderMobile(items) {
             const stack = document.getElementById('cardStack');
             items.forEach((item, index) => {
@@ -203,12 +252,9 @@
                 card.addEventListener('touchmove', (e) => {
                     currentX = e.touches[0].clientX - startX;
                     const rotation = currentX / 15;
-                    
-                    // Determine if the current drag direction is correct
                     const isDraggingRight = currentX > 0;
                     const isCorrectDir = (isDraggingRight && item.cat === 'high') || (!isDraggingRight && item.cat === 'low');
 
-                    // Color feedback
                     if (Math.abs(currentX) > 20) {
                         card.style.backgroundColor = isCorrectDir ? 'var(--correct-green)' : 'var(--error-red)';
                     } else {
@@ -218,11 +264,10 @@
                     card.style.transform = `translate(-50%, -50%) translateX(${currentX}px) rotate(${rotation}deg)`;
                 }, {passive: true});
 
-                card.addEventListener('touchend', (e) => {
+                card.addEventListener('touchend', () => {
                     const isDraggingRight = currentX > 0;
                     const isCorrectDir = (isDraggingRight && item.cat === 'high') || (!isDraggingRight && item.cat === 'low');
 
-                    // Validation: Only allow swipe if direction is correct AND distance is met
                     if (Math.abs(currentX) > 100 && isCorrectDir) {
                         card.style.transition = 'transform 0.3s ease-out, opacity 0.3s';
                         card.style.transform = `translate(-50%, -50%) translateX(${currentX * 3}px) rotate(${currentX / 2}deg)`;
@@ -230,7 +275,6 @@
                         setTimeout(() => card.remove(), 300);
                         handlePlacement(item, isDraggingRight ? 'high' : 'low');
                     } else {
-                        // Reset if incorrect or not far enough
                         card.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.3s';
                         card.style.transform = 'translate(-50%, -50%) translateX(0px) rotate(0deg)';
                         card.style.backgroundColor = 'white';
