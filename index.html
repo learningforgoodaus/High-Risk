@@ -3,189 +3,250 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DV Risk Indicators - Hybrid Interaction</title>
+    <title>Responsive Risk Sort</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
-            --brand-purple: #513873;
-            --brand-mauve: #9C7F9D;
-            --brand-bg: #F6F5F8;
-            --ui-error: #ef4444; /* Bright Red */
-            --ui-success: #22c55e; /* Green */
+            --purple-dark: #3E3054;
+            --purple-light: #7D6B91;
+            --bg-soft: #F6F5F8;
         }
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: var(--brand-bg);
-            overscroll-behavior: none;
+            background-color: var(--bg-soft);
+            overflow-x: hidden;
         }
 
-        /* PC Dragging Style */
-        .dragging {
-            opacity: 0.5;
-            transform: scale(0.95);
-        }
-
-        /* Mobile Selected Style */
-        .selected-item {
-            border: 3px solid var(--brand-purple) !important;
-            box-shadow: 0 0 15px rgba(81, 56, 115, 0.3);
-        }
-
-        /* The Error State (Happens inside the zone) */
-        .incorrect-placement {
-            background-color: #fee2e2 !important;
-            border-color: var(--ui-error) !important;
-            color: var(--ui-error) !important;
-            animation: shake 0.4s ease-in-out;
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
-        }
-
+        /* --- Desktop Specific --- */
         .draggable-item {
             cursor: grab;
-            transition: all 0.2s ease;
-            touch-action: none; /* Prevents scrolling while interacting */
+            transition: transform 0.2s, box-shadow 0.2s;
+            touch-action: none;
+        }
+        .dragging { opacity: 0.5; transform: scale(0.95); }
+        .drop-zone { min-height: 200px; transition: all 0.3s ease; }
+        .drag-over { background-color: rgba(62, 48, 84, 0.1) !important; border-style: solid !important; }
+
+        /* --- Mobile Swipe Specific --- */
+        #mobileContainer {
+            display: none;
+            height: 350px;
+            position: relative;
+            perspective: 1000px;
+            touch-action: none;
         }
 
-        .correct-drop {
-            background-color: #f0fdf4 !important;
-            border-color: var(--ui-success) !important;
-            cursor: default;
+        .swipe-card {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 2px solid var(--purple-light);
+            user-select: none;
+            transition: transform 0.1s ease-out;
         }
 
-        .drop-zone {
-            min-height: 180px;
-            transition: transform 0.2s, background-color 0.2s;
+        @media (max-width: 767px) {
+            #desktopView { display: none; }
+            #mobileContainer { display: block; }
         }
 
-        .drag-over {
-            background-color: rgba(81, 56, 115, 0.1) !important;
-            transform: scale(1.02);
+        /* --- Summary View --- */
+        .summary-hidden { display: none !important; }
+        
+        .swipe-indicator {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-weight: bold;
+            text-transform: uppercase;
+            opacity: 0;
+            pointer-events: none;
         }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
-    <div class="max-w-5xl mx-auto">
-        <div class="text-center mb-8">
-            <h1 class="text-2xl font-bold text-[#513873] mb-2">High Risk Indicators</h1>
-            <p class="text-gray-600 text-sm italic">Drag or Tap to sort the indicators into the correct categories.</p>
+    <div id="gameContainer" class="max-w-5xl mx-auto">
+        <div class="text-center mb-6">
+            <h1 class="text-2xl font-bold text-[#3E3054] mb-2">Risk Indicator Sort</h1>
+            <p id="instruction" class="text-gray-600 text-sm italic">Drag to sort or swipe the card left/right.</p>
         </div>
 
-        <div id="itemsContainer" class="flex flex-wrap justify-center gap-3 mb-12 min-h-[100px]"></div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="drop-zone border-2 border-dashed border-[#513873] rounded-2xl p-6 bg-white" data-zone="high">
-                <h3 class="text-[#513873] font-bold text-center mb-4 uppercase tracking-wider">High Risk</h3>
-                <div class="zone-content space-y-3"></div>
+        <div id="desktopView">
+            <div id="itemsContainer" class="flex flex-wrap justify-center gap-3 mb-10 min-h-[100px]"></div>
+            <div class="grid grid-cols-2 gap-6">
+                <div class="drop-zone border-2 border-dashed border-[#7D6B91] rounded-2xl p-6 bg-white" data-zone="low">
+                    <h3 class="text-[#7D6B91] font-bold text-center mb-4 uppercase">Abuse & Control</h3>
+                    <div class="zone-content space-y-3"></div>
+                </div>
+                <div class="drop-zone border-2 border-dashed border-[#3E3054] rounded-2xl p-6 bg-white" data-zone="high">
+                    <h3 class="text-[#3E3054] font-bold text-center mb-4 uppercase">High Risk</h3>
+                    <div class="zone-content space-y-3"></div>
+                </div>
             </div>
+        </div>
 
-            <div class="drop-zone border-2 border-dashed border-[#9C7F9D] rounded-2xl p-6 bg-white" data-zone="low">
-                <h3 class="text-[#9C7F9D] font-bold text-center mb-4 uppercase tracking-wider">Abuse & Control</h3>
-                <div class="zone-content space-y-3"></div>
+        <div id="mobileContainer">
+            <div id="cardStack" class="relative w-full h-full"></div>
+            <div class="flex justify-between mt-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                <span>← Swipe Left for Control</span>
+                <span>Swipe Right for High Risk →</span>
             </div>
+        </div>
+    </div>
+
+    <div id="summaryView" class="max-w-4xl mx-auto summary-hidden">
+        <h2 class="text-2xl font-bold text-center text-[#3E3054] mb-8">Classification Summary</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-[#7D6B91]">
+                <h3 class="font-bold text-[#7D6B91] mb-4">Abuse & Control</h3>
+                <ul id="list-low" class="space-y-2 text-sm list-disc pl-5"></ul>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-[#3E3054]">
+                <h3 class="font-bold text-[#3E3054] mb-4">High Risk Indicators</h3>
+                <ul id="list-high" class="space-y-2 text-sm list-disc pl-5"></ul>
+            </div>
+        </div>
+        <div class="text-center mt-10">
+            <button onclick="location.reload()" class="bg-[#3E3054] text-white px-6 py-2 rounded-full font-bold">Restart Activity</button>
         </div>
     </div>
 
     <script>
         const cardData = [
-            { id: 1, cat: 'high', text: '"I will kill you if you leave."', desc: 'Direct indicator of lethal intent.' },
-            { id: 2, cat: 'high', text: '"Their hands were around my neck."', desc: 'Strangulation is a high homicide predictor.' },
-            { id: 3, cat: 'high', text: '"He showed me the gun."', desc: 'Weapon access significantly escalates risk.' },
-            { id: 4, cat: 'high', text: '"I\'m packing my bags to leave."', desc: 'Separation is the most dangerous timeframe.' },
-            { id: 5, cat: 'low', text: 'Controls my money.', desc: 'Restricts independence and ability to leave.' },
-            { id: 6, cat: 'low', text: 'Calls me names.', desc: 'Emotional abuse used to diminish self-worth.' },
-            { id: 7, cat: 'low', text: 'Demands my passwords.', desc: 'Monitoring used to exert power.' },
-            { id: 8, cat: 'low', text: 'Tells me I\'m "crazy".', desc: 'Gaslighting used to make victims doubt reality.' }
+            { id: 1, cat: 'high', text: '"I will kill you if you leave."' },
+            { id: 2, cat: 'high', text: '"Their hands were around my neck."' },
+            { id: 3, cat: 'high', text: '"He showed me the gun."' },
+            { id: 4, cat: 'high', text: '"I\'m packing my bags to leave."' },
+            { id: 5, cat: 'low', text: 'Controls my money.' },
+            { id: 6, cat: 'low', text: 'Calls me names.' },
+            { id: 7, cat: 'low', text: 'Demands my passwords.' },
+            { id: 8, cat: 'low', text: 'Tells me I\'m "crazy".' }
         ];
 
-        let selectedItem = null; // For Mobile Tap
-        const itemsContainer = document.getElementById('itemsContainer');
+        let sortedData = { high: [], low: [] };
+        let currentMobileIndex = 0;
+        const totalItems = cardData.length;
 
         function init() {
-            cardData.sort(() => Math.random() - 0.5).forEach(data => {
-                const el = document.createElement('div');
-                el.className = 'draggable-item bg-white border-2 border-gray-200 p-4 rounded-xl shadow-sm w-full max-w-[250px] text-sm font-semibold text-center';
-                el.innerText = data.text;
-                el.draggable = true;
-                el.dataset.id = data.id;
-                el.dataset.category = data.cat;
+            const shuffled = [...cardData].sort(() => Math.random() - 0.5);
+            renderDesktop(shuffled);
+            renderMobile(shuffled);
+        }
 
-                // PC: Drag Events
+        // --- DESKTOP LOGIC ---
+        function renderDesktop(items) {
+            const container = document.getElementById('itemsContainer');
+            items.forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'draggable-item bg-white border-2 border-gray-200 p-4 rounded-xl shadow-sm w-48 text-center text-sm font-medium';
+                el.innerText = item.text;
+                el.draggable = true;
+                el.dataset.id = item.id;
+                
                 el.addEventListener('dragstart', (e) => {
                     el.classList.add('dragging');
-                    e.dataTransfer.setData('text/plain', data.id);
+                    e.dataTransfer.setData('text/plain', item.id);
                 });
                 el.addEventListener('dragend', () => el.classList.remove('dragging'));
-
-                // Mobile: Tap Events
-                el.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    if (el.classList.contains('correct-drop')) return;
-                    if (selectedItem) selectedItem.classList.remove('selected-item');
-                    selectedItem = el;
-                    el.classList.add('selected-item');
-                });
-
-                itemsContainer.appendChild(el);
+                container.appendChild(el);
             });
 
-            // Zone Logic
             document.querySelectorAll('.drop-zone').forEach(zone => {
-                // PC: Drag Over
                 zone.addEventListener('dragover', (e) => {
                     e.preventDefault();
                     zone.classList.add('drag-over');
                 });
                 zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
-
-                // PC: Drop
                 zone.addEventListener('drop', (e) => {
                     zone.classList.remove('drag-over');
-                    const id = e.dataTransfer.getData('text/plain');
-                    const draggedEl = document.querySelector(`[data-id="${id}"]`);
-                    validatePlacement(draggedEl, zone);
-                });
-
-                // Mobile: Zone Click
-                zone.addEventListener('click', () => {
-                    if (selectedItem) {
-                        validatePlacement(selectedItem, zone);
-                    }
+                    const id = parseInt(e.dataTransfer.setData('text/plain', e.dataTransfer.getData('text/plain')));
+                    const item = cardData.find(c => c.id == e.dataTransfer.getData('text/plain'));
+                    handlePlacement(item, zone.dataset.zone);
+                    document.querySelector(`[data-id="${item.id}"]`).remove();
                 });
             });
         }
 
-        function validatePlacement(item, zone) {
-            const isCorrect = item.dataset.category === zone.dataset.zone;
-            const zoneContent = zone.querySelector('.zone-content');
+        // --- MOBILE SWIPE LOGIC ---
+        function renderMobile(items) {
+            const stack = document.getElementById('cardStack');
+            items.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = 'swipe-card';
+                card.style.zIndex = items.length - index;
+                card.innerText = item.text;
+                
+                let startX = 0;
+                let currentX = 0;
 
-            if (isCorrect) {
-                // SUCCESS
-                const info = cardData.find(d => d.id == item.dataset.id);
-                item.classList.remove('selected-item', 'incorrect-placement');
-                item.classList.add('correct-drop');
-                item.draggable = false;
-                item.innerHTML = `<div>${info.text}</div><div class="text-[11px] font-normal mt-2 pt-2 border-t border-green-200 text-green-700">${info.desc}</div>`;
-                zoneContent.appendChild(item);
-                selectedItem = null;
-            } else {
-                // FAILURE: Show Red inside the zone, then move back
-                item.classList.remove('selected-item');
-                item.classList.add('incorrect-placement');
-                zoneContent.appendChild(item); // Visually "drops" it in the wrong spot first
+                card.addEventListener('touchstart', (e) => {
+                    startX = e.touches[0].clientX;
+                });
 
-                setTimeout(() => {
-                    item.classList.remove('incorrect-placement');
-                    itemsContainer.appendChild(item); // Move back to start
-                }, 600);
-                selectedItem = null;
+                card.addEventListener('touchmove', (e) => {
+                    currentX = e.touches[0].clientX - startX;
+                    const rotation = currentX / 10;
+                    card.style.transform = `translateX(${currentX}px) rotate(${rotation}deg)`;
+                });
+
+                card.addEventListener('touchend', (e) => {
+                    if (Math.abs(currentX) > 120) {
+                        const direction = currentX > 0 ? 'high' : 'low';
+                        card.style.transform = `translateX(${currentX * 5}px) rotate(${currentX / 2}deg)`;
+                        card.style.opacity = '0';
+                        setTimeout(() => card.remove(), 200);
+                        handlePlacement(item, direction);
+                    } else {
+                        card.style.transform = 'translateX(0px) rotate(0deg)';
+                    }
+                    currentX = 0;
+                });
+
+                stack.appendChild(card);
+            });
+        }
+
+        function handlePlacement(item, category) {
+            sortedData[category].push(item.text);
+            const currentTotal = sortedData.high.length + sortedData.low.length;
+            
+            // Visual feedback for desktop drop
+            if (window.innerWidth >= 768) {
+                const zone = document.querySelector(`[data-zone="${category}"] .zone-content`);
+                const feedback = document.createElement('div');
+                feedback.className = 'p-2 bg-gray-50 rounded border text-xs italic';
+                feedback.innerText = item.text;
+                zone.appendChild(feedback);
             }
+
+            if (currentTotal === totalItems) {
+                setTimeout(showSummary, 500);
+            }
+        }
+
+        function showSummary() {
+            document.getElementById('gameContainer').classList.add('summary-hidden');
+            const summary = document.getElementById('summaryView');
+            summary.classList.remove('summary-hidden');
+
+            ['high', 'low'].forEach(cat => {
+                const list = document.getElementById(`list-${cat}`);
+                sortedData[cat].forEach(text => {
+                    const li = document.createElement('li');
+                    li.innerText = text;
+                    list.appendChild(li);
+                });
+            });
         }
 
         init();
