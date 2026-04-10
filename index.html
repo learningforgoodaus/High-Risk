@@ -1,238 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Responsive Risk Sort</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        :root {
-            --purple-dark: #3E3054;
-            --purple-light: #7D6B91;
-            --bg-soft: #F6F5F8;
-            --correct-green: #dcfce7;
-            --error-red: #fee2e2;
-            --border-correct: #22c55e;
-            --border-error: #ef4444;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-soft);
-            overflow-x: hidden;
-        }
-
-        /* --- Desktop Specific --- */
-        .draggable-item {
-            cursor: grab;
-            transition: transform 0.2s, box-shadow 0.2s, border-color 0.3s;
-            touch-action: none;
-        }
-        .dragging { opacity: 0.5; transform: scale(0.95); }
-        
-        .drop-zone { 
-            min-height: 200px; 
-            transition: all 0.3s ease; 
-            border-width: 2px;
-            border-style: dashed;
-        }
-
-        /* Active feedback for Desktop */
-        .drag-correct { 
-            background-color: var(--correct-green) !important; 
-            border-color: var(--border-correct) !important; 
-            border-style: solid !important;
-        }
-        .drag-wrong { 
-            background-color: var(--error-red) !important; 
-            border-color: var(--border-error) !important; 
-            border-style: solid !important;
-        }
-
-        /* --- Mobile Swipe Specific --- */
-        #mobileContainer {
-            display: none;
-            height: 350px;
-            position: relative;
-            perspective: 1000px;
-            touch-action: none;
-            margin-bottom: 2rem;
-        }
-
-        .swipe-card {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            width: 85%;
-            height: 200px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 1.5rem;
-            background: white;
-            border-radius: 1rem;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-            border: 2px solid var(--purple-light);
-            user-select: none;
-            transition: transform 0.1s ease-out, background-color 0.2s ease;
-            font-weight: 600;
-            color: var(--purple-dark);
-        }
-
-        .swipe-label {
-            font-size: 0.85rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: #1a1a1a;
-        }
-
-        @media (max-width: 767px) {
-            #desktopView { display: none; }
-            #mobileContainer { display: block; }
-        }
-
-        .summary-hidden { display: none !important; }
-    </style>
-</head>
-<body class="p-4 md:p-8">
-
-    <div id="gameContainer" class="max-w-5xl mx-auto">
-        <div class="text-center mb-8">
-            <h1 class="text-2xl font-bold text-[#3E3054] mb-2">Risk Indicator Sort</h1>
-            <p id="instruction" class="text-gray-800 text-sm md:text-base font-medium px-4">
-                Swipe left for a Control situation, or right for a High Risk situation
-            </p>
-        </div>
-
-        <div id="desktopView">
-            <div id="itemsContainer" class="flex flex-wrap justify-center gap-3 mb-10 min-h-[100px]"></div>
-            <div class="grid grid-cols-2 gap-6">
-                <div class="drop-zone border-[#7D6B91] rounded-2xl p-6 bg-white" data-zone="low">
-                    <h3 class="text-[#7D6B91] font-bold text-center mb-4 uppercase">Abuse & Control</h3>
-                    <div class="zone-content space-y-3"></div>
-                </div>
-                <div class="drop-zone border-[#3E3054] rounded-2xl p-6 bg-white" data-zone="high">
-                    <h3 class="text-[#3E3054] font-bold text-center mb-4 uppercase">High Risk</h3>
-                    <div class="zone-content space-y-3"></div>
-                </div>
-            </div>
-        </div>
-
-        <div id="mobileContainer">
-            <div id="cardStack" class="relative w-full h-full"></div>
-            <div class="flex justify-between items-center mt-6 px-2">
-                <span class="swipe-label">← Swipe Left <br><span class="text-[10px] font-normal">Control</span></span>
-                <span class="swipe-label text-right">Swipe Right → <br><span class="text-[10px] font-normal">High Risk</span></span>
-            </div>
-        </div>
-    </div>
-
-    <div id="summaryView" class="max-w-4xl mx-auto summary-hidden">
-        <h2 class="text-2xl font-bold text-center text-[#3E3054] mb-8">Classification Summary</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-[#7D6B91]">
-                <h3 class="font-bold text-[#7D6B91] mb-4">Abuse & Control</h3>
-                <ul id="list-low" class="space-y-2 text-sm list-disc pl-5"></ul>
-            </div>
-            <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-[#3E3054]">
-                <h3 class="font-bold text-[#3E3054] mb-4">High Risk Indicators</h3>
-                <ul id="list-high" class="space-y-2 text-sm list-disc pl-5"></ul>
-            </div>
-        </div>
-        <div class="text-center mt-10">
-            <button onclick="location.reload()" class="bg-[#3E3054] text-white px-8 py-3 rounded-full font-bold shadow-lg">Restart Activity</button>
-        </div>
-    </div>
-
-    <script>
-        const cardData = [
-            { id: 1, cat: 'high', text: '"I will kill you if you leave."' },
-            { id: 2, cat: 'high', text: '"Their hands were around my neck."' },
-            { id: 3, cat: 'high', text: '"He showed me the gun."' },
-            { id: 4, cat: 'high', text: '"I\'m packing my bags to leave."' },
-            { id: 5, cat: 'low', text: 'Controls my money.' },
-            { id: 6, cat: 'low', text: 'Calls me names.' },
-            { id: 7, cat: 'low', text: 'Demands my passwords.' },
-            { id: 8, cat: 'low', text: 'Tells me I\'m "crazy".' }
-        ];
-
-        let sortedData = { high: [], low: [] };
-        let draggedItemData = null; 
-        const totalItems = cardData.length;
-
-        function init() {
-            const shuffled = [...cardData].sort(() => Math.random() - 0.5);
-            renderDesktop(shuffled);
-            renderMobile(shuffled);
-        }
-
-        // --- DESKTOP LOGIC ---
-        function renderDesktop(items) {
-            const container = document.getElementById('itemsContainer');
-            items.forEach(item => {
-                const el = document.createElement('div');
-                el.className = 'draggable-item bg-white border-2 border-gray-200 p-4 rounded-xl shadow-sm w-48 text-center text-sm font-semibold';
-                el.innerText = item.text;
-                el.draggable = true;
-                el.dataset.id = item.id;
-                
-                el.addEventListener('dragstart', (e) => {
-                    el.classList.add('dragging');
-                    draggedItemData = item;
-                    e.dataTransfer.setData('text/plain', item.id);
-                });
-                el.addEventListener('dragend', () => {
-                    el.classList.remove('dragging');
-                    draggedItemData = null;
-                });
-                container.appendChild(el);
-            });
-
-            document.querySelectorAll('.drop-zone').forEach(zone => {
-                zone.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    if (!draggedItemData) return;
-                    
-                    // Live color feedback based on correctness
-                    if (draggedItemData.cat === zone.dataset.zone) {
-                        zone.classList.add('drag-correct');
-                    } else {
-                        zone.classList.add('drag-wrong');
-                    }
-                });
-
-                zone.addEventListener('dragleave', () => {
-                    zone.classList.remove('drag-correct', 'drag-wrong');
-                });
-
-                zone.addEventListener('drop', (e) => {
-                    zone.classList.remove('drag-correct', 'drag-wrong');
-                    const id = e.dataTransfer.getData('text/plain');
-                    const item = cardData.find(c => c.id == id);
-                    
-                    if(item && item.cat === zone.dataset.zone) {
-                        handlePlacement(item, zone.dataset.zone);
-                        document.querySelector(`[data-id="${id}"]`).remove();
-                    } else {
-                        // Reject drop: Flash red on item
-                        const el = document.querySelector(`[data-id="${id}"]`);
-                        if(el) {
-                            el.style.borderColor = 'var(--border-error)';
-                            el.style.backgroundColor = 'var(--error-red)';
-                            setTimeout(() => {
-                                el.style.borderColor = '';
-                                el.style.backgroundColor = '';
-                            }, 500);
-                        }
-                    }
-                });
-            });
-        }
-
-        // --- MOBILE LOGIC ---
+// --- MOBILE LOGIC ---
         function renderMobile(items) {
             const stack = document.getElementById('cardStack');
             items.forEach((item, index) => {
@@ -252,13 +18,18 @@
                 card.addEventListener('touchmove', (e) => {
                     currentX = e.touches[0].clientX - startX;
                     const rotation = currentX / 15;
+                    
+                    // Determine direction: Right = high, Left = low
                     const isDraggingRight = currentX > 0;
                     const isCorrectDir = (isDraggingRight && item.cat === 'high') || (!isDraggingRight && item.cat === 'low');
 
-                    if (Math.abs(currentX) > 20) {
+                    // 1. Change color based on direction and correctness
+                    if (Math.abs(currentX) > 30) { // Threshold to start showing color
                         card.style.backgroundColor = isCorrectDir ? 'var(--correct-green)' : 'var(--error-red)';
+                        card.style.borderColor = isCorrectDir ? 'var(--border-correct)' : 'var(--border-error)';
                     } else {
                         card.style.backgroundColor = 'white';
+                        card.style.borderColor = 'var(--purple-light)';
                     }
 
                     card.style.transform = `translate(-50%, -50%) translateX(${currentX}px) rotate(${rotation}deg)`;
@@ -268,6 +39,7 @@
                     const isDraggingRight = currentX > 0;
                     const isCorrectDir = (isDraggingRight && item.cat === 'high') || (!isDraggingRight && item.cat === 'low');
 
+                    // 2. Prevent swipe-away if the answer is incorrect or movement is too small
                     if (Math.abs(currentX) > 100 && isCorrectDir) {
                         card.style.transition = 'transform 0.3s ease-out, opacity 0.3s';
                         card.style.transform = `translate(-50%, -50%) translateX(${currentX * 3}px) rotate(${currentX / 2}deg)`;
@@ -275,9 +47,11 @@
                         setTimeout(() => card.remove(), 300);
                         handlePlacement(item, isDraggingRight ? 'high' : 'low');
                     } else {
-                        card.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.3s';
+                        // Snaps back to center if wrong direction or swipe wasn't far enough
+                        card.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.3s, border-color 0.3s';
                         card.style.transform = 'translate(-50%, -50%) translateX(0px) rotate(0deg)';
                         card.style.backgroundColor = 'white';
+                        card.style.borderColor = 'var(--purple-light)';
                     }
                     currentX = 0;
                 });
@@ -285,42 +59,4 @@
                 stack.appendChild(card);
             });
         }
-
-        function handlePlacement(item, category) {
-            sortedData[category].push(item.text);
-            const currentTotal = sortedData.high.length + sortedData.low.length;
-            
-            if (window.innerWidth >= 768) {
-                const zone = document.querySelector(`[data-zone="${category}"] .zone-content`);
-                const feedback = document.createElement('div');
-                feedback.className = 'p-3 bg-gray-50 rounded-lg border border-gray-100 text-xs font-medium text-gray-700';
-                feedback.innerText = item.text;
-                zone.appendChild(feedback);
-            }
-
-            if (currentTotal === totalItems) {
-                setTimeout(showSummary, 600);
-            }
-        }
-
-        function showSummary() {
-            document.getElementById('gameContainer').classList.add('summary-hidden');
-            const summary = document.getElementById('summaryView');
-            summary.classList.remove('summary-hidden');
-
-            ['high', 'low'].forEach(cat => {
-                const list = document.getElementById(`list-${cat}`);
-                list.innerHTML = '';
-                sortedData[cat].forEach(text => {
-                    const li = document.createElement('li');
-                    li.className = 'mb-1';
-                    li.innerText = text;
-                    list.appendChild(li);
-                });
-            });
-        }
-
-        init();
-    </script>
-</body>
-</html>
+        
